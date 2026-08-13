@@ -895,36 +895,16 @@ void Ball::DoBallCollision(Ball* param_1)
 }
 
 // FUNCTION: POPCAPGAME1 0x0047a3b0
-void Ball::CheckBallCollision(Ball* param_1)
+bool Ball::CheckBallCollision(Ball* param_1)
 {
-    SexyVector2 aDelta(param_1->mUnk0xec - mUnk0xec, param_1->mUnk0xf0 - mUnk0xf0);
-    aDelta = aDelta.Normalize();
-
-    float aThisVX = mUnk0xfc;
-    float aThisVY = mUnk0x100;
-    float aOtherVX = param_1->mUnk0xfc;
-    float aOtherVY = param_1->mUnk0x100;
-
-    float aImpulse = (aDelta.y * (aThisVY - aOtherVY) + aDelta.x * (aThisVX - aOtherVX)) * 0.95f;
-    aImpulse += aImpulse;
-
-    float aCollisionSpeed = fabsf(aImpulse);
-    param_1->mUnk0x170 = aCollisionSpeed;
-    mUnk0x170 = aCollisionSpeed;
-
-    aImpulse *= 0.5f;
-    param_1->mUnk0xfc = aOtherVX + aImpulse * aDelta.x;
-    param_1->mUnk0x100 = aDelta.y * aImpulse + aOtherVY;
-    mUnk0xfc = aThisVX - aDelta.x * aImpulse;
-    mUnk0x100 = aThisVY - aDelta.y * aImpulse;
-
-    float aDx = mUnk0xec - param_1->mUnk0xec;
-    float aDy = mUnk0xf0 - param_1->mUnk0xf0;
-    float aDistance = SexyVector2(aDx, aDy).Magnitude();
-    float aRadiusSum = mUnk0x13c + param_1->mUnk0x13c;
-
-    (void)aDistance;
-    (void)aRadiusSum;
+	float dx = mUnk0xec - param_1->mUnk0xec;
+	float dy = mUnk0xf0 - param_1->mUnk0xf0;
+	float radius = param_1->mUnk0x13c + mUnk0x13c - 2.0f;
+	if (dx * dx + dy * dy <= radius * radius) {
+		DoBallCollision(param_1);
+		return true;
+	}
+	return false;
 }
 
 // FUNCTION: POPCAPGAME1 0x004775f0

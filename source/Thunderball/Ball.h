@@ -99,7 +99,7 @@ public:
 	void DoBallBallCollision(Ball* param_1);
 	void DoBallPegCollision(Ball* param_1);
 	void DoBallCollision(Ball* param_1);
-	void CheckBallCollision(Ball* param_1);
+	bool CheckBallCollision(Ball* param_1);
 	void DoLineCollision(
 		SexyVector2* param_1,
 		PhysObj* param_2,
