@@ -75,6 +75,7 @@ public:
 	virtual ~DataWriter();
 
 	void OpenMemory(ulong theLength);
+	bool OpenFile(const std::string& theFileName);
 	void Close();
 	void EnsureCapacity(ulong theLength);
 

@@ -186,6 +186,15 @@ DataWriter::~DataWriter()
 	Close();
 }
 
+// FUNCTION: POPCAPGAME1 0x004bbd30
+bool DataWriter::OpenFile(const std::string& theFileName)
+{
+	Close();
+
+	mFileHandle = fopen(theFileName.c_str(), "wb");
+	return mFileHandle != NULL;
+}
+
 // FUNCTION: POPCAPGAME1 0x004bbd70
 void DataWriter::OpenMemory(ulong theLength)
 {

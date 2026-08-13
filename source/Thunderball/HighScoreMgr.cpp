@@ -1,8 +1,44 @@
 #include "HighScoreMgr.h"
 
+#include "DataSync.h"
+
+#include <SexyAppFramework/Common.h>
+
 #include <cstdlib>
 
 using namespace Sexy;
+
+namespace
+{
+void SyncHighScores(DataSync& theSync, HighScoreMgr::HighScoreMap& theHighScores)
+{
+	if (theSync.mReader != NULL) {
+		theHighScores.clear();
+		ulong aCount = theSync.mReader->ReadLong();
+		for (ulong i = 0; i < aCount; ++i) {
+			std::string aScoreName;
+			bool anOldStringMode = theSync.mUnk0x4c;
+			theSync.mUnk0x4c = false;
+			theSync.SyncString(aScoreName);
+			theSync.mUnk0x4c = anOldStringMode;
+
+			DataSync_SyncSTLContainer(theSync, theHighScores[aScoreName]);
+		}
+	}
+	else {
+		theSync.mWriter->WriteLong((ulong) theHighScores.size());
+		for (HighScoreMgr::HighScoreMap::iterator anItr = theHighScores.begin();
+			 anItr != theHighScores.end(); ++anItr) {
+			bool anOldStringMode = theSync.mUnk0x4c;
+			theSync.mUnk0x4c = false;
+			theSync.SyncString(const_cast<std::string&>(anItr->first));
+			theSync.mUnk0x4c = anOldStringMode;
+
+			DataSync_SyncSTLContainer(theSync, anItr->second);
+		}
+	}
+}
+}
 
 // FUNCTION: POPCAPGAME1 0x00473e00
 HighScoreMgr::HighScoreMgr()
@@ -15,6 +51,13 @@ HighScoreMgr::HighScoreMgr()
 // FUNCTION: POPCAPGAME1 0x00471e70
 HighScoreMgr::~HighScoreMgr()
 {
+}
+
+// FUNCTION: POPCAPGAME1 0x00436670
+void HighScoreEntry::SyncState(DataSync& theSync)
+{
+	theSync.SyncString(mName);
+	theSync.SyncLong(mScore);
 }
 
 // FUNCTION: POPCAPGAME1 0x0045c300
@@ -45,19 +88,48 @@ void HighScoreMgr::CreateDefHighScores(std::list<HighScoreEntry>* theList, std::
 	}
 }
 
-// STUB: POPCAPGAME1 0x00471eb0
+// FUNCTION: POPCAPGAME1 0x00471eb0
 void HighScoreMgr::SyncState(DataSync& theSync)
 {
+	int aVersion = 2;
+	theSync.SyncLong(aVersion);
+	theSync.mVersion = aVersion;
+
+	if (aVersion > 1) {
+		SyncHighScores(theSync, mHighScores);
+	}
 }
 
-// STUB: POPCAPGAME1 0x00472060
-void HighScoreMgr::Save()
+// FUNCTION: POPCAPGAME1 0x00472060
+bool HighScoreMgr::Save()
 {
+	MkDir(GetAppDataFolder() + "userdata");
+
+	DataWriter aWriter;
+	if (!aWriter.OpenFile(GetAppDataFolder() + "userdata/highscores.dat")) {
+		return false;
+	}
+
+	DataSync aSync(aWriter);
+	SyncState(aSync);
+	aSync.SyncPointers();
+	return true;
 }
 
-// STUB: POPCAPGAME1 0x00471f00
-void HighScoreMgr::Load()
+// FUNCTION: POPCAPGAME1 0x00471f00
+bool HighScoreMgr::Load()
 {
+	mHighScores.clear();
+
+	DataReader aReader;
+	if (!aReader.OpenFile(GetAppDataFolder() + "userdata/highscores.dat")) {
+		return false;
+	}
+
+	DataSync aSync(aReader);
+	SyncState(aSync);
+	aSync.SyncPointers();
+	return true;
 }
 
 // FUNCTION: POPCAPGAME1 0x00472430
@@ -85,7 +157,50 @@ std::list<HighScoreEntry>* HighScoreMgr::GetScores(std::string* param_1, bool pa
 	return &aScores;
 }
 
-// STUB: POPCAPGAME1 0x00472210
-void HighScoreMgr::Submit(std::string* name, std::string* param2, int score, bool param4, bool param5)
+// FUNCTION: POPCAPGAME1 0x00472210
+bool HighScoreMgr::Submit(std::string* theScoreName, std::string* thePlayerName, int theScore,
+	bool theIsNewHighScore, bool theReload)
 {
+	if (theScore <= 0) {
+		return false;
+	}
+
+	std::list<HighScoreEntry>& aScores = mHighScores[*theScoreName];
+	if (aScores.empty()) {
+		CreateDefHighScores(&aScores, theScoreName);
+	}
+
+	for (std::list<HighScoreEntry>::iterator anItr = aScores.begin();
+		 anItr != aScores.end(); ++anItr) {
+		anItr->mIsActive = false;
+	}
+
+	std::list<HighScoreEntry>::iterator anInsertItr = aScores.begin();
+	while (anInsertItr != aScores.end() && anInsertItr->mScore >= theScore) {
+		++anInsertItr;
+	}
+
+	if (anInsertItr == aScores.end() && aScores.size() >= 10) {
+		return false;
+	}
+
+	if (theIsNewHighScore) {
+		if (theReload) {
+			Load();
+			return Submit(theScoreName, thePlayerName, theScore, true, false);
+		}
+
+		HighScoreEntry anEntry;
+		anEntry.mName = *thePlayerName;
+		anEntry.mScore = theScore;
+		anEntry.mIsActive = true;
+		aScores.insert(anInsertItr, anEntry);
+
+		while (aScores.size() > 10) {
+			aScores.pop_back();
+		}
+		Save();
+	}
+
+	return true;
 }

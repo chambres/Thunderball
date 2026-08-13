@@ -1,6 +1,8 @@
 #ifndef __HIGHSCORE_MGR_H__
 #define __HIGHSCORE_MGR_H__
 
+#include <SexyAppFramework/Common.h>
+
 #include <list>
 #include <map>
 #include <string>
@@ -19,21 +21,26 @@ public:
 		: mName(), mScore(0), mIsActive(false)
 	{
 	}
+
+	void SyncState(DataSync& theSync);
 };
 
 class HighScoreMgr {
 public:
-	std::map<std::string, std::list<HighScoreEntry> > mHighScores;
+	typedef std::map<std::string, std::list<HighScoreEntry>, StringLessNoCase> HighScoreMap;
+
+	HighScoreMap mHighScores;
 
 	HighScoreMgr();
 	virtual ~HighScoreMgr();
 
 	void CreateDefHighScores(std::list<HighScoreEntry>* theList, std::string* param_1);
 	void SyncState(DataSync& theSync);
-	void Save();
-	void Load();
+	bool Save();
+	bool Load();
 	std::list<HighScoreEntry>* GetScores(std::string* param_1, bool param_2);
-	void Submit(std::string* name, std::string* param2, int score, bool param4, bool param5);
+	bool Submit(std::string* theScoreName, std::string* thePlayerName, int theScore,
+		bool theIsNewHighScore, bool theReload);
 };
 
 } // namespace Sexy
