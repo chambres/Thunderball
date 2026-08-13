@@ -3,6 +3,8 @@
 #include "Ball.h"
 #include "Board.h"
 #include "LogicMgr.h"
+#include "Mover.h"
+#include "PegInfo.h"
 #include "ThunderCommon.h"
 #include "../SexyAppFramework/SexyApp.h"
 #include "../SexyAppFramework/WidgetManager.h"
@@ -10,6 +12,9 @@
 #include <math.h>
 
 using namespace Sexy;
+
+// GLOBAL: POPCAPGAME1 0x00650a38
+static int gDebugPegSyncCount = 0;
 
 // FUNCTION: POPCAPGAME1 0x0043ffa0
 DebugMgr::DebugMgr(Board* param_1) : mBoard(param_1)
@@ -36,9 +41,15 @@ void DebugMgr::MarkCheat()
 	mUnk0x20 = true;
 }
 
-// STUB: POPCAPGAME1 0x004648e0
+// FUNCTION: POPCAPGAME1 0x004648e0
 void DebugMgr::SyncFlipperState()
 {
+	MarkCheat();
+	LogicMgr* logicMgr = mBoard->mLogicMgr;
+	int& powerupCount = logicMgr->mUnk0x1e4[logicMgr->mUnk0x128];
+	powerupCount = powerupCount > 0 ? 0 : 1000;
+	mUnk0x6 = powerupCount > 0;
+	logicMgr->ActivatePowerup(POWERUP_2, powerupCount > 0);
 }
 
 // FUNCTION: POPCAPGAME1 0x0054b760
@@ -104,9 +115,24 @@ void DebugMgr::UpdateMouseBall()
 	}
 }
 
-// STUB: POPCAPGAME1 0x004414e0
+// FUNCTION: POPCAPGAME1 0x004414e0
 void DebugMgr::SyncFeverState()
 {
+	MarkCheat();
+	mBoard->mLogicMgr->ActivateFreeBall(!mUnk0x5);
+
+	for (std::list<SmartPtr<PhysObj> >::iterator it = mBoard->mUnk0x190.begin();
+		 it != mBoard->mUnk0x190.end(); ++it) {
+		PhysObj* obj = *it;
+		if (obj->mUnk0x5c != "fever") {
+			continue;
+		}
+
+		obj->SetActive(mUnk0x5);
+		if (obj->mMover != NULL) {
+			obj->SetMoveUpdateCnt(mUnk0x5 ? obj->mMover->mTime / 2 : 0);
+		}
+	}
 }
 
 // FUNCTION: POPCAPGAME1 0x00440010
@@ -134,14 +160,54 @@ Ball* DebugMgr::GetBallAt(float param_1, float param_2)
 	return closestBall;
 }
 
-// STUB: POPCAPGAME1 0x00446670
+// FUNCTION: POPCAPGAME1 0x00446670
 void DebugMgr::SyncNumDebugPegs()
 {
+	LogicMgr* logicMgr = mBoard->mLogicMgr;
+	++gDebugPegSyncCount;
+	bool keepPowerupPeg =
+		mUnk0x14 < 2 && ((gDebugPegSyncCount % 2) == 0 || mUnk0x14 == 0);
+
+	if (mUnk0x14 >= 0) {
+		MarkCheat();
+		std::set<SmartPtr<PhysObj> >::iterator it = logicMgr->mUnk0x364.begin();
+		while (it != logicMgr->mUnk0x364.end() &&
+			   logicMgr->mUnk0x364.size() > (unsigned int)mUnk0x14) {
+			PhysObj* obj = *it;
+			if (obj->mPegInfo->mPegType == POWERUP && !keepPowerupPeg) {
+				if (mUnk0x14 < 2) {
+					keepPowerupPeg = true;
+				}
+				++it;
+			} else {
+				obj->SetActive(false);
+				logicMgr->mUnk0x364.erase(it++);
+			}
+		}
+	}
+
+	if (mUnk0x18 >= 0) {
+		MarkCheat();
+		std::set<SmartPtr<PhysObj> >::iterator it = logicMgr->mUnk0x358.begin();
+		while (it != logicMgr->mUnk0x358.end() &&
+			   logicMgr->mUnk0x358.size() > (unsigned int)mUnk0x18) {
+			PhysObj* obj = *it;
+			obj->SetActive(false);
+			logicMgr->mUnk0x358.erase(it++);
+		}
+	}
 }
 
-// STUB: POPCAPGAME1 0x00464930
+// FUNCTION: POPCAPGAME1 0x00464930
 void DebugMgr::InitLevel()
 {
+	SyncNumDebugPegs();
+	if (mUnk0x5) {
+		SyncFeverState();
+	}
+	if (mUnk0x6) {
+		SyncFlipperState();
+	}
 }
 
 // FUNCTION: POPCAPGAME1 0x0043e4a0
@@ -193,9 +259,33 @@ bool DebugMgr::MouseDown(int theX, int theY, int theClickCount)
 	return false;
 }
 
-// STUB: POPCAPGAME1 0x0044db10
+// FUNCTION: POPCAPGAME1 0x0044db10
 void DebugMgr::DeleteBalls(bool param_1)
 {
+	std::list<SmartPtr<Ball> > balls;
+	Ball* ballToKeep = NULL;
+	float topY = 100000.0f;
+
+	for (std::list<SmartPtr<Ball> >::iterator it = mBoard->mUnk0x19c.begin();
+		 it != mBoard->mUnk0x19c.end(); ++it) {
+		Ball* ball = *it;
+		if (!ball->mUnk0x140) {
+			if (ball->mUnk0xf0 < topY) {
+				topY = ball->mUnk0xf0;
+				ballToKeep = ball;
+			}
+			balls.push_back(ball);
+		}
+	}
+
+	if (balls.size() < 2 || param_1) {
+		ballToKeep = NULL;
+	}
+	for (std::list<SmartPtr<Ball> >::iterator it = balls.begin(); it != balls.end(); ++it) {
+		if (it->get() != ballToKeep) {
+			mBoard->RemoveObj(it->get());
+		}
+	}
 }
 
 // FUNCTION: POPCAPGAME1 0x0044dcd0

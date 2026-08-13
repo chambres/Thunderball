@@ -1019,9 +1019,51 @@ void Board::AddObj(PhysObj* param_1)
 {
 }
 
-// STUB: POPCAPGAME1 0x0040fed0
+// FUNCTION: POPCAPGAME1 0x0040fed0
 void Board::RemoveObj(PhysObj* param_1)
 {
+	std::list<SmartPtr<PhysObj> >::iterator objIt = mUnk0x190.begin();
+	while (objIt != mUnk0x190.end() && objIt->get() != param_1) {
+		++objIt;
+	}
+	if (objIt == mUnk0x190.end()) {
+		return;
+	}
+
+	if (param_1->mUnk0x10 == 2) {
+		Ball* ball = static_cast<Ball*>(param_1);
+		SmartPtr<Ball> ballRef = ball;
+		std::list<SmartPtr<Ball> >::iterator ballIt = mUnk0x19c.begin();
+		while (ballIt != mUnk0x19c.end() && ballIt->get() != ball) {
+			++ballIt;
+		}
+
+		if (ball->mUnk0x18d && ballIt != mUnk0x19c.end()) {
+			Effect* effect = mEffectMgr->AddEffect(
+				(EffectType)0x1e,
+				ball->mUnk0x134 + ball->mUnk0x104 - ball->mUnk0xec,
+				ball->mUnk0x138 + ball->mUnk0x108 - ball->mUnk0xf0,
+				0,
+				false);
+			effect->mUnk0x1c = ball->mUnk0xfc;
+			effect->mUnk0x20 = ball->mUnk0x100;
+			effect->mUnk0x10 = 0;
+			effect->mUnk0x24 = PhysObj::mGravity;
+			effect->mUnk0x38 = ball->mUnk0x188 != NULL;
+		}
+
+		if (ball->mUnk0x188 != NULL) {
+			SmartPtr<Ball> linkedBall = ball->mUnk0x188;
+			ball->mUnk0x188 = NULL;
+			RemoveObj(linkedBall);
+		}
+		if (ballIt != mUnk0x19c.end()) {
+			mUnk0x19c.erase(ballIt);
+		}
+	}
+
+	mCollisionMgr->RemoveObj(param_1);
+	mUnk0x190.erase(objIt);
 }
 
 // FUNCTION: POPCAPGAME1 0x00410120
