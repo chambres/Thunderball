@@ -53,12 +53,12 @@ public:
 	void Clear();
 	Effect* AddEffect(EffectType param_1, float param_2, float param_3, int param_4, bool param_5);
 	Effect* AddLevelBumper(PhysObj* param_1);
-	Effect* AddSpookyBallWrap(float param_1, float param_2, float param_3, float param_4);
-	Effect* AddSpookyBall(float param_1, float param_2, bool param_3);
-	Effect* AddStyleSpin(float param_1, float param_2);
-	Effect* AddJimmy(bool param_1, int param_2, int param_3);
-	Effect* AddCatcherGlow(int param_1, bool param_2);
-	Effect* AddPyramid(float param_1, float param_2, bool param_3);
+	void AddSpookyBallWrap(float param_1, float param_2, float param_3, float param_4);
+	void AddSpookyBall(float param_1, float param_2, bool param_3);
+	void AddStyleSpin(float param_1, float param_2);
+	void AddJimmy(bool param_1, int param_2, int param_3);
+	void AddCatcherGlow(int param_1, bool param_2);
+	void AddPyramid(float param_1, float param_2, bool param_3);
 	Effect* AddFeverRainbow(int param_1);
 	Effect* AddRay(float param_1, float param_2);
 	Effect* AddFeverHoleEffect(float param_1, float param_2, int param_3);

@@ -3,7 +3,12 @@
 #include <SexyAppFramework/Image.h>
 #include <SexyAppFramework/ModVal.h>
 
+#include "Board.h"
+#include "PhysObj.h"
+#include "Res.h"
 #include "ThunderCommon.h"
+
+#include <cmath>
 
 using namespace Sexy;
 
@@ -90,40 +95,265 @@ Effect* EffectMgr::AddLevelBumper(PhysObj* param_1)
 	return NULL;
 }
 
-// STUB: POPCAPGAME1 0x004514d0
-Effect* EffectMgr::AddSpookyBallWrap(float param_1, float param_2, float param_3, float param_4)
+// FUNCTION: POPCAPGAME1 0x004514d0
+void EffectMgr::AddSpookyBallWrap(float param_1, float param_2, float param_3, float param_4)
 {
-	return NULL;
+	int aDuration = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp914,4667", 80);
+	int aPriority = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp915,4668", 2);
+	if (ModVal(0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp916,4673", 0)) {
+		for (int i = 0; i < 2; ++i) {
+			Effect* anEffect = AddEffect((EffectType)0x23, param_3, param_4, aPriority, false);
+			anEffect->mUnk0x38 = i;
+			anEffect->mUnk0x28 = SEXY_PI * 1.5f;
+			anEffect->mUnk0x10 = aDuration;
+		}
+	}
+
+	Effect* anEffect = AddEffect((EffectType)0x23, param_1, param_2, aPriority, false);
+	anEffect->mUnk0x28 = SEXY_PI / 2.0f;
+	anEffect->mUnk0x10 = aDuration;
+	anEffect->mUnk0x38 = param_1 < 325.0f;
 }
 
-// STUB: POPCAPGAME1 0x00451310
-Effect* EffectMgr::AddSpookyBall(float param_1, float param_2, bool param_3)
+// FUNCTION: POPCAPGAME1 0x00451310
+void EffectMgr::AddSpookyBall(float param_1, float param_2, bool param_3)
 {
-	return NULL;
+	int aDuration = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp906,4623", 40);
+	int aPriority = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp907,4624", 0);
+	float aSpeed = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp908,4625", 0.3f);
+
+	for (int i = 0; i < 4; ++i) {
+		Effect* anEffect = AddEffect((EffectType)0x22, param_1, param_2, aPriority, false);
+		switch (i) {
+		case 0:
+			anEffect->mUnk0x20 = -aSpeed;
+			break;
+		case 1:
+			anEffect->mUnk0x20 = aSpeed;
+			break;
+		case 2:
+			anEffect->mUnk0x1c = aSpeed;
+			break;
+		case 3:
+			anEffect->mUnk0x1c = -aSpeed;
+			break;
+		}
+		anEffect->mUnk0x38 = i;
+		anEffect->mUnk0x10 = aDuration;
+	}
+
+	aDuration = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp909,4642", 100);
+	aPriority = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp910,4643", 2);
+	int aDelay = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp911,4644", 5);
+	int aStartAngle = Rand();
+	for (int i = 0; i < 3; ++i) {
+		Effect* anEffect = AddEffect((EffectType)0x23, param_1, param_2, aPriority, false);
+		anEffect->mUnk0x10 = aDuration;
+		anEffect->mUnk0xc = -aDelay;
+		anEffect->mUnk0x28 = (float)(
+			(double)i * 6.2831854820251465 / 3.0 +
+			(double)(aStartAngle % 360) * 3.1415927410125732 / 180.0);
+		anEffect->mUnk0x34 = ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp912,4652", 5);
+	}
+
+	if (param_3) {
+		Effect* anEffect = AddEffect((EffectType)0x24, param_1, param_2, aPriority, false);
+		anEffect->mUnk0x10 = ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp913,4659", 10000);
+	}
 }
 
-// STUB: POPCAPGAME1 0x00451140
-Effect* EffectMgr::AddStyleSpin(float param_1, float param_2)
+// FUNCTION: POPCAPGAME1 0x00451140
+void EffectMgr::AddStyleSpin(float param_1, float param_2)
 {
-	return NULL;
+	if (GetBoard() == NULL) {
+		return;
+	}
+
+	int aPriority = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp898,4592", 0);
+	int aDuration = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp899,4593", 40);
+	int aCount = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp900,4594", 35);
+	int aRadius = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp901,4595", 60);
+	float aRadiusFloat = (float)aRadius;
+	float aCountFloat = (float)aCount;
+	int anXCenter = (int)param_1;
+
+	for (int i = 0; i < aCount; ++i) {
+		float aRandom = (float)(Rand() % 1000) / 1000.0f;
+		float aScale = 1.0f - aRandom * aRandom;
+		float anAngle = (float)i;
+		anAngle = (float)(anAngle * 2.0f * 3.1415927410125732 / aCountFloat);
+		double anXScale =
+			(double)ModVal(
+				0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp902,4604", 1.5f) *
+			aRadiusFloat * aScale;
+		float aSin = (float)sin(anAngle);
+		float anX = (float)((double)aSin * anXScale + param_1);
+		int aYOffset = ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp903,4605", 10);
+		double aYCenter = (double)param_2 - aYOffset;
+		double aYScale =
+			(double)ModVal(
+				0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp904,4605", 0.5f) *
+			aRadiusFloat * aScale;
+		float aCos = (float)cos(anAngle);
+		float aY = (float)((double)aCos * aYScale + aYCenter);
+
+		Effect* anEffect = AddEffect((EffectType)0x2e, anX, aY, aPriority, false);
+		anEffect->mUnk0x10 = aDuration;
+		anEffect->mUnk0x38 = anXCenter;
+		anEffect->mUnk0x3c = (int)((double)param_2 - ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp905,4610", 10));
+		anEffect->mUnk0x40 = true;
+	}
 }
 
-// STUB: POPCAPGAME1 0x00450ff0
-Effect* EffectMgr::AddJimmy(bool param_1, int param_2, int param_3)
+// FUNCTION: POPCAPGAME1 0x00450ff0
+void EffectMgr::AddJimmy(bool param_1, int param_2, int param_3)
 {
-	return NULL;
+	Board* aBoard = GetBoard();
+	if (aBoard == NULL) {
+		return;
+	}
+
+	int anX;
+	if (param_1) {
+		anX = aBoard->mUnk0x1b0 + ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp893,4559", -40);
+	}
+	else {
+		anX = ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp894,4559", 40) -
+			IMAGE_JIMMY->mWidth;
+	}
+	float anXPos = (float)anX;
+	float aY = (float)(aBoard->mUnk0x1b4 + ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp895,4560", -3));
+	int aDuration = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp896,4562", 150);
+	if (param_2 < 0) {
+		param_2 = Rand();
+	}
+	int aCel = param_2 % 255;
+
+	Effect* anEffect = AddEffect((EffectType)0x1f, anXPos, aY, -1, false);
+	anEffect->mUnk0x10 = aDuration;
+	anEffect->mUnk0x38 = param_1;
+	anEffect->mUnk0x34 = aCel;
+	anEffect->mUnk0xc = -param_3;
+	anEffect->mUnk0x40 = true;
+
+	int aPriority = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp897,4576", 2);
+	anEffect = AddEffect((EffectType)0x1f, anXPos, aY, aPriority, false);
+	anEffect->mUnk0x34 = aCel;
+	anEffect->mUnk0x38 = param_1;
+	anEffect->mUnk0x10 = aDuration;
+	anEffect->mUnk0xc = -param_3;
+	anEffect->mUnk0x40 = true;
 }
 
-// STUB: POPCAPGAME1 0x00450d30
-Effect* EffectMgr::AddCatcherGlow(int param_1, bool param_2)
+// FUNCTION: POPCAPGAME1 0x00450d30
+void EffectMgr::AddCatcherGlow(int param_1, bool param_2)
 {
-	return NULL;
+	Board* aBoard = GetBoard();
+	if (aBoard == NULL) {
+		return;
+	}
+
+	PhysObj* aCatcher = NULL;
+	for (std::list<SmartPtr<PhysObj> >::iterator anItr = aBoard->mUnk0x190.begin();
+		 anItr != aBoard->mUnk0x190.end(); ++anItr) {
+		PhysObj* anObj = *anItr;
+		if (anObj->mUnk0x10 == 1 &&
+			anObj->mUnk0x5c.compare(0, anObj->mUnk0x5c.size(), "freeball", 8) == 0) {
+			aCatcher = anObj;
+			break;
+		}
+	}
+	if (aCatcher == NULL) {
+		return;
+	}
+
+	Effect* anEffect = AddEffect(
+		(EffectType)0x1a, aCatcher->GetXPos(), aCatcher->GetYPos(), 0, false);
+	anEffect->mUnk0xc = -param_1;
+	anEffect->mUnk0x10 = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp883,4527", 90);
+	anEffect->mUnk0x4c = aCatcher;
+	if (param_2) {
+		anEffect->mUnk0x38 = 1;
+	}
+
+	int aCount = ModVal(
+		0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp884,4534", 20);
+	for (int i = 0; i < aCount; ++i) {
+		double aRandom = 1.0 - (double)(Rand() % 1000) / 1000.0;
+		int anX = (int)((double)ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp885,4538", 60) * aRandom);
+		int aYRange = ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp888,4539", 40);
+		int aY = ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp887,4539", 20) -
+			Rand() % aYRange;
+		int anXOffset = ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp886,4539", 0);
+
+		anEffect = AddEffect((EffectType)0x1b, (float)(anXOffset + anX), (float)aY, 0, false);
+		anEffect->mUnk0x1c = ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp889,4540", 0.01f) *
+			(float)anX;
+		anEffect->mUnk0x20 = (float)(Rand() % 50 + 50) * ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp890,4541", 0.01f);
+		anEffect->mUnk0xc = -param_1;
+		int aDurationRange = ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp892,4543", 50);
+		anEffect->mUnk0x10 = Rand() % aDurationRange + ModVal(
+			0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp891,4543", 70);
+		anEffect->mUnk0x4c = aCatcher;
+		anEffect->mUnk0x38 = Rand() % 3 + 1;
+		anEffect->mUnk0x3c = Rand() % 100;
+	}
 }
 
-// STUB: POPCAPGAME1 0x00450c60
-Effect* EffectMgr::AddPyramid(float param_1, float param_2, bool param_3)
+// FUNCTION: POPCAPGAME1 0x00450c60
+void EffectMgr::AddPyramid(float param_1, float param_2, bool param_3)
 {
-	return NULL;
+	Board* aBoard = GetBoard();
+	if (aBoard == NULL) {
+		return;
+	}
+
+	for (std::list<SmartPtr<PhysObj> >::iterator anItr = aBoard->mUnk0x190.begin();
+		 anItr != aBoard->mUnk0x190.end(); ++anItr) {
+		PhysObj* anObj = *anItr;
+		if (!anObj->mUnk0x94.empty() &&
+			anObj->mUnk0x94.compare(0, anObj->mUnk0x94.size(), "bumperc", 7) == 0) {
+			Effect* anEffect = AddEffect(
+				(EffectType)0x17,
+				param_1,
+				param_2,
+				ModVal(0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp881,4497", 2),
+				false);
+			anEffect->mUnk0x10 = ModVal(
+				0, "SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\EffectMgr.cpp882,4498", 120);
+			anEffect->mUnk0x4c = anObj;
+			return;
+		}
+	}
 }
 
 // STUB: POPCAPGAME1 0x00450940
