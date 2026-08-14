@@ -39,6 +39,7 @@
 #include <SexyAppFramework/MusicInterface.h>
 #include <SexyAppFramework/MemoryImage.h>
 #include <SexyAppFramework/Graphics.h>
+#include <algorithm>
 #include <list>
 
 using namespace Sexy;
@@ -962,10 +963,17 @@ bool Board::LoadReplayFile(std::string& param_1)
     return true;
 }
 
-// STUB: POPCAPGAME1 0x0040d8e0
-PhysObj* Board::FindObj(PhysObj* param_1, bool param_2)
+// FUNCTION: POPCAPGAME1 0x0040d8e0
+std::list<SmartPtr<PhysObj> >::iterator Board::FindObj(PhysObj* param_1, bool param_2)
 {
-    return NULL;
+	SmartPtr<PhysObj> anObj = param_1;
+	std::list<SmartPtr<PhysObj> >::iterator anItr =
+		std::find(mUnk0x190.begin(), mUnk0x190.end(), anObj);
+
+	if (param_2 && anItr != mUnk0x190.end())
+		++anItr;
+
+	return anItr;
 }
 
 // FUNCTION: POPCAPGAME1 0x004090d0
@@ -1009,14 +1017,46 @@ void Board::Clear(bool param_1)
     DeleteReplays(false);
 }
 
-// STUB: POPCAPGAME1 0x00421070
+// FUNCTION: POPCAPGAME1 0x00421070
 void Board::AddObj(PhysObj* param_1, std::list<Sexy::SmartPtr<PhysObj>>::iterator param_2)
 {
+	mUnk0x190.insert(param_2, param_1);
+	mCollisionMgr->AddObj(param_1);
+
+	if (param_1->mUnk0x10 == 2)
+	{
+		Ball* aBall = static_cast<Ball*>(param_1);
+		if (!aBall->mUnk0x18c)
+		{
+			bool anOccupiedSlot[2] = { false, false };
+			for (std::list<SmartPtr<Ball> >::iterator anItr = mUnk0x19c.begin();
+				anItr != mUnk0x19c.end(); ++anItr)
+			{
+				int aSlot = anItr->get()->mUnk0xe8;
+				if ((unsigned int) aSlot < 2)
+					anOccupiedSlot[aSlot] = true;
+			}
+
+			for (int aSlot = 0; aSlot < 2; ++aSlot)
+			{
+				if (!anOccupiedSlot[aSlot])
+				{
+					aBall->mUnk0xe8 = aSlot;
+					break;
+				}
+			}
+
+			mUnk0x19c.push_back(aBall);
+		}
+	}
+
+	param_1->AddedToGame();
 }
 
-// STUB: POPCAPGAME1 0x00422a90
+// FUNCTION: POPCAPGAME1 0x00422a90
 void Board::AddObj(PhysObj* param_1)
 {
+	AddObj(param_1, mUnk0x190.end());
 }
 
 // FUNCTION: POPCAPGAME1 0x0040fed0
@@ -1426,8 +1466,8 @@ void Board::ActivateTypingCheck(int param_1)
 		iVar5 = mLogicMgr->mUnk0x128;
 		bVar10 = mLogicMgr->mUnk0x1cc[iVar5] != POWERUP_2;
 		uVar6 = (uint) bVar10;
-		*(uint*) (mLogicMgr->mUnk0x1cc[iVar5]) = (int) (uVar6 << 0x1f) >> 0x1f & 2;
-		*(uint*) (mLogicMgr->mUnk0x1e4[iVar5]) = (int) (uVar6 << 0x1f) >> 0x1f & 1000;
+		mLogicMgr->mUnk0x1cc[iVar5] = (PowerupType) ((int) (uVar6 << 0x1f) >> 0x1f & 2);
+		mLogicMgr->mPowerupCount[POWERUP_2][iVar5] = (int) (uVar6 << 0x1f) >> 0x1f & 1000;
 		mLogicMgr->ActivatePowerup(POWERUP_2, bVar10);
 		break;
 

@@ -5,13 +5,17 @@
 #include "Board.h"
 #include "CharacterMgr.h"
 #include "DebugMgr.h"
+#include "EffectMgr.h"
 #include "Gun.h"
 #include "InterfaceMgr.h"
 #include "Mover.h"
+#include "PlayerInfo.h"
 #include "Poly.h"
+#include "Res.h"
 #include "SoundMgr.h"
 #include "ThunderCommon.h"
 #include "ThunderButton.h"
+#include "ThunderballApp.h"
 
 #include <SexyAppFramework/Common.h>
 #include <SexyAppFramework/SoundInstance.h>
@@ -239,7 +243,7 @@ void LogicMgr::BeginTurn2()
 	mBoard->Reload();
 	mBoard->mInterfaceMgr->LoadGun();
 
-	if (mFireballCount[mUnk0x128] > 0)
+	if (mPowerupCount[POWERUP_12][mUnk0x128] > 0)
 		mBoard->mGun->SetFireball(true);
 	if (mUnk0x54)
 		SetWearHat(true);
@@ -495,16 +499,111 @@ void LogicMgr::FreeBallHit(Hole* param_1, Ball* param_2)
 	// TODO
 }
 
-// STUB: POPCAPGAME1 0x004612e0
+// FUNCTION: POPCAPGAME1 0x004612e0
 void LogicMgr::ActivatePowerup(PowerupType param_1, bool param_2)
 {
-	// TODO
+	switch (param_1)
+	{
+	case POWERUP_1:
+		if (mUnk0x4 != 2)
+			mBoard->mGun->SetDoBouncyGuide(param_2);
+		break;
+
+	case POWERUP_2:
+		if (param_2)
+		{
+			ClearFlipperSpace();
+			if (!mUnk0x244[mUnk0x128] && !mUnk0xf5 &&
+				mBoard->mApp->mCurProfile != NULL && mBoard->mApp->mCurProfile->mUnk0x54 < 2)
+			{
+				mUnk0x20 = true;
+			}
+		}
+		else
+		{
+			FlipperClick(false);
+		}
+
+		for (std::list<SmartPtr<PhysObj> >::iterator anItr = mBoard->mUnk0x190.begin();
+			anItr != mBoard->mUnk0x190.end(); ++anItr)
+		{
+			PhysObj* anObj = anItr->get();
+			if (anObj->mUnk0x5c == "flipper")
+			{
+				anObj->SetActiveWithGrowAnim(param_2);
+				if (param_2 && mUnk0x4 == 2 && anObj->mUnk0x10 == 5)
+				{
+					static_cast<Poly*>(anObj)->mUnk0x140 = ModVal(
+						0,
+						"SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\LogicMgr.cpp1079,1559",
+						180
+					);
+				}
+
+				if (anObj->mMover == NULL)
+					anObj->mUnk0x24 = false;
+			}
+		}
+		break;
+
+	case POWERUP_4:
+		if (!param_2)
+			mBoard->mEffectMgr->EraseAllOfType((EffectType) 0x16);
+		else if (mUnk0x4 == 2)
+			ActivateFreeBall(true);
+		break;
+
+	case POWERUP_7:
+		if (param_2 && mUnk0x4 != 2)
+			mBoard->mCharacterMgr->SetYinYangEye(true);
+		break;
+
+	case POWERUP_10:
+		mUnk0x148 = param_2 ? 100 : 0;
+		break;
+
+	case POWERUP_12:
+		if (mUnk0x4 != 2)
+			ActivateFreeBallCover(param_2);
+		break;
+	}
+
+	if (param_1 == POWERUP_2 || param_1 == POWERUP_4)
+	{
+		if (mPowerupCount[POWERUP_2][mUnk0x128] != 0)
+			mUnk0x134 = 130;
+		else
+			mUnk0x134 = mPowerupCount[POWERUP_4][mUnk0x128] != 0 ? 200 : 260;
+	}
 }
 
-// STUB: POPCAPGAME1 0x00461560
+// FUNCTION: POPCAPGAME1 0x00461560
 void LogicMgr::ActivatePowerups()
 {
-	// TODO
+	PowerupType aPowerup = mUnk0x1cc[mUnk0x128];
+	if (aPowerup != POWERUP_0)
+		mPowerupCount[aPowerup][mUnk0x128] = 1000;
+
+	for (int i = 0; i < 14; ++i)
+	{
+		if (mPowerupCount[i][mUnk0x128] > 0)
+			--mPowerupCount[i][mUnk0x128];
+		ActivatePowerup((PowerupType) i, mPowerupCount[i][mUnk0x128] != 0);
+	}
+
+	int& aFirstCount = mUnk0x58[mUnk0x128];
+	if (aFirstCount != 0)
+	{
+		mUnk0x68 = true;
+		--aFirstCount;
+	}
+
+	int& aSecondCount = mUnk0x58[mUnk0x128 + 2];
+	if (aSecondCount != 0)
+	{
+		mUnk0x69 = true;
+		--aSecondCount;
+	}
 }
 
 // STUB: POPCAPGAME1 0x00457dc0
@@ -525,6 +624,7 @@ void LogicMgr::MakeGoalPegs()
 	// TODO
 }
 
+// STUB: POPCAPGAME1 0x004582f0
 void LogicMgr::ClearFlipperSpace()
 {
 	// TODO
@@ -663,12 +763,12 @@ void LogicMgr::CalcCornerDisplay()
 		#pragma inline_depth(16)
 		return;
 	}
-	if (mZenBallCount[mUnk0x128] > 0)
+	if (mPowerupCount[POWERUP_7][mUnk0x128] > 0)
 	{
 		mUnk0x80.assign("ZenBall", 7);
 		return;
 	}
-	if (mFireballCount[mUnk0x128] > 0)
+	if (mPowerupCount[POWERUP_12][mUnk0x128] > 0)
 	{
 		mUnk0x80.assign("Fireball", 8);
 		return;
@@ -681,10 +781,43 @@ void LogicMgr::CalcCornerDisplay()
 	mUnk0x80 = "";
 }
 
-// STUB: POPCAPGAME1 0x0045ea70
+// FUNCTION: POPCAPGAME1 0x0045ea70
 void LogicMgr::FlipperClick(bool param_1)
 {
-	// TODO
+	bool aFlipperMoved = false;
+	for (std::list<SmartPtr<PhysObj> >::iterator anItr = mBoard->mUnk0x190.begin();
+		anItr != mBoard->mUnk0x190.end(); ++anItr)
+	{
+		PhysObj* anObj = anItr->get();
+		if (anObj->mUnk0x5c != "flipper" || anObj->mMover == NULL || anObj->mMover->mTime <= 0)
+			continue;
+
+		int aMovePos = anObj->mUnk0x4c % anObj->mMover->mTime;
+		if (param_1)
+		{
+			if (aMovePos > anObj->mMover->mTime / 2)
+				anObj->SetMoveUpdateCnt(anObj->mMover->mTime - aMovePos);
+			anObj->SetMovingPercent(ModVal(
+				0,
+				"SEXY_SEXYMODVALc:\\gamesrc\\cpp\\thunderball\\LogicMgr.cpp1250,3902",
+				0.5f
+			), false);
+			aFlipperMoved = true;
+		}
+		else if (aMovePos > 0)
+		{
+			anObj->SetMovingPercent(1.0f, false);
+			aFlipperMoved = true;
+		}
+	}
+
+	if (aFlipperMoved)
+	{
+		mBoard->mSoundMgr->AddSound(
+			param_1 ? SOUND_FLIPPERUP : SOUND_FLIPPERDOWN,
+			0.0f, 0, 0, 1, -1.0f
+		);
+	}
 }
 
 void LogicMgr::CheckDoFlippers()
@@ -831,7 +964,7 @@ void LogicMgr::ActivateFreeBall(bool param_1)
 	if (!mUnk0xf6 || !param_1)
 	{
 		std::list<SmartPtr<PhysObj> >& anObjList = mBoard->mUnk0x190;
-		bool anActive = param_1 && mFreeBallCount[mUnk0x128] > 0;
+		bool anActive = param_1 && mPowerupCount[POWERUP_4][mUnk0x128] > 0;
 		for (std::list<SmartPtr<PhysObj> >::iterator anItr = anObjList.begin();
 			anItr != anObjList.end(); ++anItr)
 		{

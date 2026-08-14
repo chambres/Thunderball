@@ -46,7 +46,7 @@ void DebugMgr::SyncFlipperState()
 {
 	MarkCheat();
 	LogicMgr* logicMgr = mBoard->mLogicMgr;
-	int& powerupCount = logicMgr->mUnk0x1e4[logicMgr->mUnk0x128];
+	int& powerupCount = logicMgr->mPowerupCount[POWERUP_2][logicMgr->mUnk0x128];
 	powerupCount = powerupCount > 0 ? 0 : 1000;
 	mUnk0x6 = powerupCount > 0;
 	logicMgr->ActivatePowerup(POWERUP_2, powerupCount > 0);

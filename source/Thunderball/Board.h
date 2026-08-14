@@ -197,7 +197,7 @@ class Board : public Widget, public ButtonListener
 	void     PlayMusic();
 	void     DeleteReplays(bool param_1);
 	bool     LoadReplayFile(std::string& param_1);
-	PhysObj* FindObj(PhysObj* param_1, bool param_2);
+	std::list<Sexy::SmartPtr<PhysObj> >::iterator FindObj(PhysObj* param_1, bool param_2);
 	void     Reload();
 	void     Clear(bool param_1);
 	void     AddObj(PhysObj* param_1, std::list<Sexy::SmartPtr<PhysObj> >::iterator param_2);
